@@ -1,0 +1,43 @@
+# Local development services.
+#
+#   docker compose up -d              → Postgres only (run the app via `npm run dev`)
+#   docker compose --profile full up  → Postgres + the API in a container too
+#
+# In production you don't use this file: the frontend goes to Vercel and the
+# API image (backend/Dockerfile) is deployed to a container host pointing at Neon.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: e41c-db
+    environment:
+      POSTGRES_USER: e41c
+      POSTGRES_PASSWORD: e41c
+      POSTGRES_DB: e41c
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U e41c']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./backend
+    container_name: e41c-api
+    profiles: ['full'] # only runs with `--profile full`
+    environment:
+      PORT: 4000
+      # Inside the compose network the DB host is the service name, "db".
+      DATABASE_URL: postgres://e41c:e41c@db:5432/e41c
+      DATABASE_SSL: 'false'
+      CORS_ORIGIN: http://localhost:5173
+    ports:
+      - '4000:4000'
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

@@ -1,0 +1,50 @@
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Soft aurora behind the headline — the only "wow" effect, kept tasteful. */
+.hero__glow {
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(900px, 120vw);
+  height: 700px;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgba(110, 139, 255, 0.22),
+    rgba(176, 110, 255, 0.12) 45%,
+    transparent 70%
+  );
+  filter: blur(20px);
+  pointer-events: none;
+}
+
+.hero__inner {
+  position: relative;
+  padding-block: 8rem 4rem;
+}
+
+.hero__title {
+  font-size: clamp(2.6rem, 8vw, 5.5rem);
+  font-weight: 700;
+  margin-top: 1.25rem;
+}
+
+.hero__lede {
+  margin-top: 1.75rem;
+  max-width: 36rem;
+  font-size: clamp(1.05rem, 2.5vw, 1.3rem);
+  color: var(--text-dim);
+}
+
+.hero__cta {
+  margin-top: 2.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}

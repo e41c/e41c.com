@@ -1,0 +1,119 @@
+/* =========================================================================
+   Design system — the "Apple feel" lives here.
+   One tight type scale, generous whitespace, restrained color, a single
+   accent gradient. Tokens first; components consume them.
+   ========================================================================= */
+
+:root {
+  /* Color */
+  --bg:            #000000;
+  --bg-elevated:   #0d0d0f;
+  --surface:       rgba(255, 255, 255, 0.04);
+  --surface-hover: rgba(255, 255, 255, 0.07);
+  --border:        rgba(255, 255, 255, 0.10);
+  --text:          #f5f5f7;
+  --text-dim:      #a1a1a6;
+  --text-faint:    #6e6e73;
+
+  --accent-a: #6e8bff;
+  --accent-b: #b06eff;
+  --accent-gradient: linear-gradient(120deg, var(--accent-a), var(--accent-b));
+
+  /* Type */
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Spacing rhythm */
+  --pad-page: clamp(1.25rem, 5vw, 6rem);
+  --maxw: 1120px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@supports (font-variation-settings: normal) {
+  :root { --font: 'Inter var', -apple-system, BlinkMacSystemFont, sans-serif; }
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a { color: inherit; text-decoration: none; }
+
+h1, h2, h3 {
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0;
+  font-weight: 600;
+}
+
+::selection { background: var(--accent-b); color: #fff; }
+
+/* --- Reusable bits ------------------------------------------------------- */
+
+.container {
+  width: 100%;
+  max-width: var(--maxw);
+  margin-inline: auto;
+  padding-inline: var(--pad-page);
+}
+
+.gradient-text {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-faint);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  border-radius: 980px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: transform 0.2s var(--ease), background 0.2s var(--ease),
+    opacity 0.2s var(--ease);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.btn:hover { transform: translateY(-1px); }
+
+.btn-primary { background: var(--accent-gradient); color: #fff; }
+.btn-primary:hover { opacity: 0.92; }
+
+.btn-ghost {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+.btn-ghost:hover { background: var(--surface-hover); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

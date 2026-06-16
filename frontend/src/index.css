@@ -70,6 +70,11 @@ h1, h2, h3 {
   padding-inline: var(--pad-page);
 }
 
+/* Narrower measure for long-form reading (blog posts, admin form). */
+.container--narrow {
+  max-width: 720px;
+}
+
 .gradient-text {
   background: var(--accent-gradient);
   -webkit-background-clip: text;

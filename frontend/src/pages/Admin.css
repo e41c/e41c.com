@@ -1,0 +1,94 @@
+.admin {
+  padding-block: clamp(7rem, 14vw, 10rem) 6rem;
+}
+
+.admin__title {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  margin-top: 0.5rem;
+}
+
+.admin__note {
+  margin-top: 1rem;
+  color: var(--text-dim);
+}
+.admin__note code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.85em;
+  background: var(--surface);
+  padding: 0.1em 0.4em;
+  border-radius: 6px;
+}
+
+.admin__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 2.5rem;
+}
+
+.admin__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.admin__hint {
+  color: var(--text-faint);
+  font-weight: 400;
+}
+
+.admin__form input,
+.admin__form textarea {
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  transition: border-color 0.2s var(--ease);
+}
+.admin__form input:focus,
+.admin__form textarea:focus {
+  outline: none;
+  border-color: var(--accent-a);
+}
+
+.admin__form textarea {
+  resize: vertical;
+  line-height: 1.6;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.92rem;
+}
+
+.admin__check {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.6rem !important;
+  color: var(--text);
+}
+.admin__check input { width: auto; }
+
+.admin__form .btn {
+  align-self: flex-start;
+}
+
+.admin__msg {
+  margin-top: 1.5rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+}
+.admin__msg--ok {
+  background: rgba(110, 139, 255, 0.12);
+  border: 1px solid rgba(110, 139, 255, 0.4);
+  color: var(--text);
+}
+.admin__msg--err {
+  background: rgba(255, 90, 90, 0.1);
+  border: 1px solid rgba(255, 90, 90, 0.4);
+  color: #ffb4b4;
+}

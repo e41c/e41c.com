@@ -10,5 +10,22 @@ export async function getJSON(path) {
   return res.json();
 }
 
+// --- projects ---
 export const fetchProjects = () => getJSON('/projects');
 export const fetchRepos = () => getJSON('/github/repos');
+
+// --- blog ---
+export const fetchPosts = () => getJSON('/posts');
+export const fetchPost = (slug) => getJSON(`/posts/${slug}`);
+
+// Create a post. Requires the admin token, sent as a header (never in the URL).
+export async function createPost(post, token) {
+  const res = await fetch(`${BASE}/posts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+    body: JSON.stringify(post),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Request failed: ${res.status}`);
+  return data;
+}

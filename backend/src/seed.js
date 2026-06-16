@@ -43,6 +43,50 @@ const projects = [
   },
 ];
 
+// One published post so the blog isn't empty. Add more via the /admin editor.
+const posts = [
+  {
+    slug: 'hello-world',
+    title: 'Building this site from scratch',
+    excerpt:
+      'Why I built my portfolio as a real fullstack app instead of a template — and what I learned wiring up React, Express, Postgres, and Docker.',
+    tags: ['web-dev', 'react', 'postgres'],
+    published: true,
+    body: `# Building this site from scratch
+
+I could have grabbed a template. Instead I built **e41c.com** as a real
+fullstack application — because the point is to *show* I can build one.
+
+## The stack
+
+- **Frontend** — React + Vite, with Framer Motion for the animations.
+- **Backend** — Node and Express, split into its own workspace.
+- **Database** — Postgres, running in Docker locally and on Neon in production.
+
+\`\`\`js
+// The whole app talks to one tiny helper:
+const BASE = import.meta.env.VITE_API_URL || '/api';
+export const fetchPosts = () => getJSON('/posts');
+\`\`\`
+
+## What's next
+
+A live dashboard for my MetaTrader 5 trading bot, a way for clients to request
+work, and more writing. Thanks for reading — more soon.`,
+  },
+];
+
+const upsertPost = `
+  INSERT INTO posts (slug, title, excerpt, body, tags, published, published_at)
+  VALUES ($1, $2, $3, $4, $5::jsonb, $6, CASE WHEN $6 THEN now() ELSE NULL END)
+  ON CONFLICT (slug) DO UPDATE SET
+    title     = EXCLUDED.title,
+    excerpt   = EXCLUDED.excerpt,
+    body      = EXCLUDED.body,
+    tags      = EXCLUDED.tags,
+    published = EXCLUDED.published;
+`;
+
 const upsert = `
   INSERT INTO projects
     (slug, title, tagline, description, tech, repo_url, live_url, featured, sort_order)
@@ -74,7 +118,19 @@ async function main() {
       p.sort_order,
     ]);
   }
-  console.log(`✓ Seeded ${projects.length} projects into Postgres.`);
+  for (const p of posts) {
+    await pool.query(upsertPost, [
+      p.slug,
+      p.title,
+      p.excerpt,
+      p.body,
+      JSON.stringify(p.tags),
+      p.published,
+    ]);
+  }
+  console.log(
+    `✓ Seeded ${projects.length} projects and ${posts.length} post(s) into Postgres.`,
+  );
 }
 
 main()

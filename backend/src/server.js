@@ -4,6 +4,7 @@ import cors from 'cors';
 
 import { initDb } from './init.js';
 import projects from './routes/projects.js';
+import posts from './routes/posts.js';
 import github from './routes/github.js';
 
 const app = express();
@@ -24,6 +25,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/projects', projects);
+app.use('/api/posts', posts);
 app.use('/api/github', github);
 
 // Central error handler — keeps route code tidy (routes just call next(err)).

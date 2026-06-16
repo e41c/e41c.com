@@ -1,0 +1,99 @@
+.article {
+  padding-block: clamp(7rem, 14vw, 10rem) 6rem;
+}
+
+.article__back {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  transition: color 0.2s var(--ease);
+}
+.article__back:hover {
+  color: var(--text);
+}
+
+.article__note {
+  color: var(--text-dim);
+  margin-top: 2rem;
+}
+
+.article__date {
+  display: block;
+  margin-top: 2.5rem;
+  color: var(--text-faint);
+  font-size: 0.85rem;
+}
+
+.article__title {
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  font-weight: 700;
+  margin-top: 0.5rem;
+}
+
+/* --- Markdown body ------------------------------------------------------- */
+.article__body {
+  margin-top: 2.5rem;
+  font-size: 1.12rem;
+  line-height: 1.8;
+  color: var(--text-dim);
+}
+
+.article__body h1,
+.article__body h2,
+.article__body h3 {
+  color: var(--text);
+  margin: 2.5rem 0 1rem;
+  letter-spacing: -0.02em;
+}
+.article__body h2 { font-size: 1.6rem; }
+.article__body h3 { font-size: 1.25rem; }
+
+.article__body p { margin: 1.25rem 0; }
+
+.article__body a {
+  color: var(--accent-a);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.article__body ul,
+.article__body ol {
+  margin: 1.25rem 0;
+  padding-left: 1.4rem;
+}
+.article__body li { margin: 0.4rem 0; }
+
+.article__body strong { color: var(--text); font-weight: 600; }
+
+.article__body code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.875em;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.15em 0.4em;
+  border-radius: 6px;
+}
+
+.article__body pre {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+  overflow-x: auto;
+  margin: 1.75rem 0;
+}
+.article__body pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.article__body blockquote {
+  margin: 1.75rem 0;
+  padding-left: 1.25rem;
+  border-left: 3px solid var(--accent-b);
+  color: var(--text);
+}
+
+.article__body img { max-width: 100%; border-radius: 14px; }

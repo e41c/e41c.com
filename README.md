@@ -4,6 +4,8 @@ Personal site & portfolio of **Eric Grigor** — software engineer.
 
 An Apple-inspired, fullstack web app. Vite + React frontend, Node/Express + Postgres backend, kept in separate workspaces so the frontend/backend boundary is explicit.
 
+> **New here?** [`ARCHITECTURE.md`](./ARCHITECTURE.md) walks through how it all fits together with concrete request flows.
+
 ## Stack
 
 | Layer    | Tech                                            |
@@ -25,8 +27,8 @@ e41cDotCom/
 │       ├── db.js        Postgres connection pool
 │       ├── schema.sql   table definitions (idempotent)
 │       ├── init.js      applies the schema on boot
-│       ├── seed.js      your projects — EDIT THIS
-│       └── routes/      projects.js, github.js
+│       ├── seed.js      your projects + a welcome post — EDIT THIS
+│       └── routes/      projects.js, posts.js, github.js
 ├── docker-compose.yml # local Postgres (+ optional API container)
 └── package.json       # npm workspaces — runs both with one command
 ```
@@ -72,6 +74,17 @@ with `npm run dev` is faster (hot reload), so the API container is opt-in.
 | `npm run db:reset` | Stop and **wipe** the local database, restart  |
 | `npm run build`    | Production build of the frontend               |
 
+## Writing (blog)
+
+Posts live in the `posts` table as Markdown. Reading is public; publishing is
+guarded by a shared secret.
+
+- **Read:** `GET /api/posts` (published list) and `GET /api/posts/:slug`.
+- **Publish:** set `ADMIN_TOKEN` in `backend/.env`, then visit `/admin` (a page
+  intentionally not linked in the nav), paste the token, write Markdown, publish.
+  Under the hood that's a `POST /api/posts` with an `x-admin-token` header.
+- Drafts (`published = false`) stay invisible to the public API until published.
+
 ## Deployment
 
 - **Frontend → Vercel.** Set the project root to `frontend/`, build command
@@ -86,7 +99,7 @@ with `npm run dev` is faster (hot reload), so the API container is opt-in.
 
 - [x] v1 — Polished landing + projects showcase (API-driven)
 - [x] Postgres + Docker + deploy-ready config
-- [ ] Blog (write/publish, stored in Postgres)
+- [x] Blog — Markdown posts with token-gated publishing (`/admin`)
 - [ ] Client signup + job requests
 - [ ] MT5 algo-trading dashboard (equity curve, win rate, live positions)
 - [ ] Résumé / `/uses` page

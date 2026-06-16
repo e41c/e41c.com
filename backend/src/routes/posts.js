@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { query } from '../db.js';
+import { authenticate, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -11,21 +12,9 @@ const slugify = (s) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
-// Shared-secret guard for write operations. Set ADMIN_TOKEN in the backend
-// env, then send it as the `x-admin-token` header to publish/edit/delete.
-// Good enough for a single-author blog; swap for real auth if it grows.
-function requireAdmin(req, res, next) {
-  const token = process.env.ADMIN_TOKEN;
-  if (!token) {
-    return res
-      .status(503)
-      .json({ error: 'Publishing is disabled: ADMIN_TOKEN is not set.' });
-  }
-  if (req.get('x-admin-token') !== token) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  next();
-}
+// Writes are gated by the shared auth middleware: you must be authenticated
+// AND have the 'admin' role. (This replaced the old single ADMIN_TOKEN.)
+const adminOnly = [authenticate, requireRole('admin')];
 
 // --- public reads --------------------------------------------------------
 
@@ -62,10 +51,10 @@ router.get('/:slug', async (req, res, next) => {
   }
 });
 
-// --- admin writes (require x-admin-token) --------------------------------
+// --- admin writes (must be a signed-in admin) ----------------------------
 
 // POST /api/posts — create (and optionally publish) a post.
-router.post('/', requireAdmin, async (req, res, next) => {
+router.post('/', ...adminOnly, async (req, res, next) => {
   try {
     const { title, excerpt = '', body, tags = [], published = false } =
       req.body ?? {};
@@ -93,7 +82,7 @@ router.post('/', requireAdmin, async (req, res, next) => {
 });
 
 // PUT /api/posts/:slug — update an existing post. Only provided fields change.
-router.put('/:slug', requireAdmin, async (req, res, next) => {
+router.put('/:slug', ...adminOnly, async (req, res, next) => {
   try {
     const { title, excerpt, body, tags, published } = req.body ?? {};
     const { rows } = await query(
@@ -130,7 +119,7 @@ router.put('/:slug', requireAdmin, async (req, res, next) => {
 });
 
 // DELETE /api/posts/:slug
-router.delete('/:slug', requireAdmin, async (req, res, next) => {
+router.delete('/:slug', ...adminOnly, async (req, res, next) => {
   try {
     const { rowCount } = await query('DELETE FROM posts WHERE slug = $1', [
       req.params.slug,

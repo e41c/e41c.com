@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import bcrypt from 'bcryptjs';
 import pool from './db.js';
 import { initDb } from './init.js';
 
@@ -128,9 +129,24 @@ async function main() {
       p.published,
     ]);
   }
+  // Seed (or reset) the single admin account from env. Signups via the API are
+  // always 'user'; the admin only exists because we create it here, server-side.
+  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@e41c.com').toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD || 'change-me-please';
+  const adminHash = await bcrypt.hash(adminPassword, 10);
+  await pool.query(
+    `INSERT INTO users (email, name, password_hash, role)
+     VALUES ($1, 'Eric Grigor', $2, 'admin')
+     ON CONFLICT (email) DO UPDATE SET
+       password_hash = EXCLUDED.password_hash,
+       role          = 'admin'`,
+    [adminEmail, adminHash],
+  );
+
   console.log(
     `✓ Seeded ${projects.length} projects and ${posts.length} post(s) into Postgres.`,
   );
+  console.log(`✓ Admin account ready: ${adminEmail}`);
 }
 
 main()

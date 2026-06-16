@@ -39,11 +39,15 @@ Requires **Node 22+** and **Docker** (for the local Postgres).
 
 ```bash
 npm install                         # installs both workspaces
-cp backend/.env.example backend/.env   # default values work for local dev
+cp backend/.env.example backend/.env   # then set JWT_SECRET + ADMIN_PASSWORD
 npm run db:up                       # start Postgres in Docker
-npm run seed                        # create tables + seed projects
+npm run seed                        # create tables, seed content + admin user
 npm run dev                         # run API (:4000) and web (:5173) together
 ```
+
+> Set `JWT_SECRET` in `backend/.env` before starting (the API won't boot
+> without it) — e.g. `openssl rand -hex 32`. Set `ADMIN_PASSWORD` too; that's
+> your login for `/admin`.
 
 Then open http://localhost:5173. The Vite dev server proxies `/api/*` to the backend, so there are no CORS headaches in development.
 
@@ -74,15 +78,31 @@ with `npm run dev` is faster (hot reload), so the API container is opt-in.
 | `npm run db:reset` | Stop and **wipe** the local database, restart  |
 | `npm run build`    | Production build of the frontend               |
 
+## Accounts & roles
+
+Auth is a JWT stored in an httpOnly cookie, with two roles plus anonymous guests:
+
+| Role    | Who                                | Can                                  |
+| ------- | ---------------------------------- | ------------------------------------ |
+| guest   | not signed in                      | read public pages                    |
+| `user`  | anyone who signs up at `/signup`   | account actions (e.g. request work)  |
+| `admin` | seeded server-side (`npm run seed`)| publish/edit/delete blog posts       |
+
+Endpoints: `POST /api/auth/signup`, `/login`, `/logout`, `GET /api/auth/me`.
+Two middlewares enforce it — `authenticate` (identity) and `requireRole(...)`
+(permission). See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full flow.
+
+The admin login comes from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `backend/.env`.
+
 ## Writing (blog)
 
-Posts live in the `posts` table as Markdown. Reading is public; publishing is
-guarded by a shared secret.
+Posts live in the `posts` table as Markdown. Reading is public; publishing
+requires an **admin** account.
 
 - **Read:** `GET /api/posts` (published list) and `GET /api/posts/:slug`.
-- **Publish:** set `ADMIN_TOKEN` in `backend/.env`, then visit `/admin` (a page
-  intentionally not linked in the nav), paste the token, write Markdown, publish.
-  Under the hood that's a `POST /api/posts` with an `x-admin-token` header.
+- **Publish:** sign in as the admin, go to `/admin` (not linked in the nav),
+  write Markdown, publish. Under the hood: `POST /api/posts`, gated by
+  `requireRole('admin')`.
 - Drafts (`published = false`) stay invisible to the public API until published.
 
 ## Deployment

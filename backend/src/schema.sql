@@ -1,6 +1,16 @@
 -- Schema is idempotent (IF NOT EXISTS), so it is safe to run on every server
 -- boot and before every seed. A fresh deploy gets its tables automatically.
 
+CREATE TABLE IF NOT EXISTS users (
+  id            SERIAL PRIMARY KEY,
+  email         TEXT UNIQUE NOT NULL,
+  name          TEXT NOT NULL DEFAULT '',
+  password_hash TEXT NOT NULL,                       -- bcrypt hash, never plaintext
+  role          TEXT NOT NULL DEFAULT 'user'
+                  CHECK (role IN ('user', 'admin')), -- guest = no account at all
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS projects (
   id          SERIAL PRIMARY KEY,
   slug        TEXT UNIQUE NOT NULL,

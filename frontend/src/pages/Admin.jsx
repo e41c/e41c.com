@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 import { createPost } from '../lib/api.js';
 import './Admin.css';
 
@@ -12,7 +14,7 @@ const EMPTY = {
 };
 
 export default function Admin() {
-  const [token, setToken] = useState('');
+  const { user, loading } = useAuth();
   const [form, setForm] = useState(EMPTY);
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -23,25 +25,58 @@ export default function Admin() {
       [key]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
     }));
 
+  // --- access control: only signed-in admins see the editor ---
+  if (loading) {
+    return (
+      <section className="admin">
+        <div className="container container--narrow">
+          <p className="admin__note">Loading…</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!user || user.role !== 'admin') {
+    return (
+      <section className="admin">
+        <div className="container container--narrow">
+          <p className="eyebrow">Admin</p>
+          <h1 className="admin__title">Admins only</h1>
+          <p className="admin__note">
+            {user
+              ? "Your account doesn't have admin access."
+              : 'You need to sign in as an admin to publish posts.'}
+          </p>
+          {!user && (
+            <Link
+              to="/login"
+              state={{ from: '/admin' }}
+              className="btn btn-primary"
+            >
+              Sign in
+            </Link>
+          )}
+        </div>
+      </section>
+    );
+  }
+
   async function submit(e) {
     e.preventDefault();
     setBusy(true);
     setMsg(null);
     try {
-      const saved = await createPost(
-        {
-          title: form.title,
-          slug: form.slug || undefined,
-          excerpt: form.excerpt,
-          body: form.body,
-          tags: form.tags
-            .split(',')
-            .map((t) => t.trim())
-            .filter(Boolean),
-          published: form.published,
-        },
-        token,
-      );
+      const saved = await createPost({
+        title: form.title,
+        slug: form.slug || undefined,
+        excerpt: form.excerpt,
+        body: form.body,
+        tags: form.tags
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean),
+        published: form.published,
+      });
       setMsg({ type: 'ok', text: `Saved “${saved.title}” → /blog/${saved.slug}` });
       setForm(EMPTY);
     } catch (err) {
@@ -57,20 +92,10 @@ export default function Admin() {
         <p className="eyebrow">Admin</p>
         <h1 className="admin__title">Write a post</h1>
         <p className="admin__note">
-          Paste your <code>ADMIN_TOKEN</code>, write in Markdown, publish. This
-          page isn't linked anywhere on the site.
+          Signed in as {user.email}. Write in Markdown and publish.
         </p>
 
         <form className="admin__form" onSubmit={submit}>
-          <label>
-            Admin token
-            <input
-              type="password"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              required
-            />
-          </label>
           <label>
             Title
             <input value={form.title} onChange={update('title')} required />

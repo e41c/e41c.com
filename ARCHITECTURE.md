@@ -73,48 +73,83 @@ The key idea: **data flows one direction per request** — component → `lib/ap
 Note `WHERE published = TRUE`: drafts exist in the database but are invisible to
 the public API. Only the admin endpoints can see or change them.
 
-## Request lifecycle #3 — publishing a post (the write path)
+## Request lifecycle #3 — publishing a post (an authorized write)
 
-This is the one flow that changes data, so it's protected:
+Writing data runs through two middlewares in sequence — first *who are you?*,
+then *are you allowed?*:
 
 ```
-pages/Admin.jsx  (hidden page, not linked in the nav)
-  └─ you paste the ADMIN_TOKEN + write Markdown
-  └─ createPost(post, token)  →  POST /api/posts
-        headers: { x-admin-token: <token> }
-        └─ requireAdmin middleware compares header to process.env.ADMIN_TOKEN
-              ✗ no token set  → 503   ✗ wrong token → 401   ✓ match → continue
+pages/Admin.jsx (admins only; sends guests to /login)
+  └─ createPost(post)  →  POST /api/posts   (auth cookie sent automatically)
+        └─ authenticate          reads the JWT cookie → req.user (or null)
+        └─ requireRole('admin')
+              req.user is null   → 401  Authentication required
+              role !== 'admin'   → 403  Forbidden
+              admin              → continue
         └─ INSERT INTO posts (...) RETURNING ...
         └─ 201 + the saved post
 ```
 
-`requireAdmin` is a deliberately simple shared-secret guard — fine for a
-single-author blog. If the blog ever grows multiple authors, that one function
-is where real authentication would slot in.
+## Authentication & roles
+
+Identity and permissions are two separate concerns, handled by two small
+middlewares in `middleware/auth.js`:
+
+- **`authenticate`** — *authentication*. Reads the JWT from the httpOnly cookie,
+  verifies it, and sets `req.user` (or `null` for a guest). It never blocks.
+- **`requireRole(...roles)`** — *authorization*. Runs after `authenticate` and
+  returns `401` if nobody's logged in, `403` if the role isn't allowed.
+
+```
+guest   no account / no cookie     → can read public endpoints only
+user    signed up via /api/auth    → a client; can do user-gated actions
+admin   seeded server-side only    → can publish/edit/delete posts
+```
+
+How a login actually works:
+
+```
+/login or /signup  →  POST /api/auth/{login,signup}
+  └─ bcrypt verifies (or hashes) the password — plaintext never stored
+  └─ signToken() issues a JWT { sub, email, role }, set as an httpOnly cookie
+  └─ AuthContext stores the returned user; the cookie rides along on every
+     later request, so a refresh stays logged in (GET /api/auth/me answers
+     "who am I?" on app load)
+```
+
+The cookie is **httpOnly** (JavaScript can't read it, so XSS can't steal the
+token), and the JWT is signed with `JWT_SECRET` — the server can verify it
+wasn't tampered with, without any server-side session store. Signup always
+creates a `user`; the single `admin` exists only because `seed.js` creates it.
 
 ## Where each responsibility lives
 
 ```
 backend/src/
-  server.js      app setup: CORS, JSON parsing, mounts routes, error handler,
+  server.js      app setup: CORS, cookies, mounts routes, error handler,
                  initDb() then listen()
   db.js          the single Postgres connection Pool + a query() helper
-  schema.sql     table definitions (CREATE TABLE IF NOT EXISTS — idempotent)
+  schema.sql     table definitions (users, projects, posts) — idempotent
   init.js        applies schema.sql on boot, so a fresh deploy self-initializes
-  seed.js        inserts starter projects + a welcome post (upsert by slug)
+  seed.js        starter projects + a welcome post + the admin user
+  middleware/
+    auth.js      authenticate (JWT cookie → req.user) + requireRole(...)
   routes/
+    auth.js      signup / login / logout / me  (rate-limited)
     projects.js  GET list / GET one
     posts.js     GET list / GET one (public)  +  POST/PUT/DELETE (admin-only)
     github.js    proxy to the GitHub API (keeps any token server-side)
 
 frontend/src/
-  main.jsx       mounts <App/> inside <BrowserRouter>
-  App.jsx        route table (/, /blog, /blog/:slug, /admin, 404)
+  main.jsx       mounts <App/> inside <BrowserRouter> + <AuthProvider>
+  App.jsx        route table (/, /blog, /blog/:slug, /login, /signup, /admin, 404)
+  context/
+    AuthContext  tracks the signed-in user; login/signup/logout helpers
   components/
     Layout.jsx   Nav + <Outlet/> + Footer shared across every page
     Nav, Hero, Projects, ProjectCard, Footer
   pages/
-    Home, Blog, Post, Admin, NotFound
+    Home, Blog, Post, Admin, Login, Signup, NotFound
   lib/api.js     the ONE place that knows the API base URL + does fetches
   index.css      design tokens (color, type, spacing) — the "Apple feel"
 ```
@@ -128,8 +163,14 @@ switching:
 | --------------- | --------------------------------- | ----------------------------------- |
 | `DATABASE_URL`  | Docker Postgres on localhost      | Neon connection string              |
 | `DATABASE_SSL`  | `false`                           | `true`                              |
+| `JWT_SECRET`    | any long random string            | a long random secret (keep it safe) |
 | `CORS_ORIGIN`   | unset (allow all)                 | `https://e41c.com`                  |
 | `VITE_API_URL`  | unset (Vite proxies `/api`)       | the deployed API URL + `/api`       |
+
+> **Cookie note for production:** because the frontend (Vercel) and API are on
+> different domains, the auth cookie is sent cross-site (`SameSite=None; Secure`).
+> Hosting the API at a subdomain of your site (e.g. `api.e41c.com`) makes it
+> *same-site*, which is simpler and more robust — worth doing when you deploy.
 
 That's the payoff of the clean split: shipping to production is a configuration
 change, not a code change.

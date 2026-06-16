@@ -1,29 +1,41 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 
 import { initDb } from './init.js';
 import projects from './routes/projects.js';
 import posts from './routes/posts.js';
+import auth from './routes/auth.js';
 import github from './routes/github.js';
+
+// Fail fast: signing/verifying JWTs is impossible without this.
+if (!process.env.JWT_SECRET) {
+  throw new Error(
+    'JWT_SECRET is not set. Add a long random string to backend/.env.',
+  );
+}
 
 const app = express();
 
-// In production, lock CORS to your real frontend origin(s) via CORS_ORIGIN
-// (comma-separated, e.g. "https://e41c.com,https://www.e41c.com"). In dev it's
-// unset → allow all, so the Vite proxy and direct calls both work.
 const origins = (process.env.CORS_ORIGIN || '')
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean);
-app.use(cors({ origin: origins.length ? origins : true }));
+
+// credentials:true lets the browser send the httpOnly auth cookie. With
+// origin:true the request's origin is reflected back — required, because you
+// cannot combine the "*" wildcard with credentials.
+app.use(cors({ origin: origins.length ? origins : true, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 // Liveness check — handy for uptime monitors and deploy health checks.
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'e41c-api' });
 });
 
+app.use('/api/auth', auth);
 app.use('/api/projects', projects);
 app.use('/api/posts', posts);
 app.use('/api/github', github);

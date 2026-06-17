@@ -107,13 +107,8 @@ requires an **admin** account.
 
 ## Deployment
 
-- **Frontend → Vercel.** Set the project root to `frontend/`, build command
-  `npm run build`, output `dist/`. Add an env var `VITE_API_URL` pointing at the
-  deployed API (e.g. `https://e41c-api.up.railway.app/api`).
-- **Backend → a container host** (Railway / Render / Fly) built from
-  `backend/Dockerfile`. Set `DATABASE_URL` (Neon), `DATABASE_SSL=true`, and
-  `CORS_ORIGIN=https://e41c.com`.
-- **Database → Neon.** Create a project, copy the connection string.
+Frontend → **Vercel**, backend (Docker) + Postgres → **Railway**, both
+auto-deploying on `git push`. Full click-by-click in [`DEPLOY.md`](./DEPLOY.md).
 
 ## Roadmap
 
